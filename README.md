@@ -1,1 +1,1 @@
-# Laboratorio2b_Proyecto2
+# Laboratorio2_Proyecto2
