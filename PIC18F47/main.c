@@ -197,7 +197,7 @@ int main(void) {
           
             if(states.filter_flag == 1){
                 PORTDbits.RD0 = 1;
-                states.filtered_number_FIR = filter_FIR(states.ADC_number);
+                states.filtered_number_FIR = (int)filtrarIIR((float)states.ADC_number);
                 PORTDbits.RD0 = 0;
                 states.filter_flag = 0;
                 aux = states.filtered_number_FIR + 4096;

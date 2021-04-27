@@ -13,7 +13,6 @@ float num_2[3] = { 1,1,1};
 float den_2[3] = {1,1.0313,0.9063};
 float w_2[3] = {0,0,0};
 
- 
  //Low pass
 /*
 float gain_1 = 0.1539;
