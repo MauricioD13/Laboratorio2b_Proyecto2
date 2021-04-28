@@ -24,13 +24,14 @@ void config_UART(){
     TRISCbits.TRISC7 = 1; // Input RX
     ANSELCbits.ANSELC7 = 0; // As digital
     PIE3bits.U1RXIE = 1; //Interrupt enable
+    PIE3bits.TXB1IE = 1;
     PIE3bits.U1IE = 1;
     U1RXPPS = 0x17; //0b00010111;
     
     
     //X = ((Fosc/Desired baud rate)/16) - 1
     
-    U1BRGL = 207;//19200
+    U1BRGL = 208;//19200
     U1BRGH = 0;
     
     //Enable receiver interrupts
@@ -82,6 +83,3 @@ int transmit_UART(int value){
     }
 }
 
-int receive_UART(){
-    return RECEIVED;
-}

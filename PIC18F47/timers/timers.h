@@ -17,7 +17,7 @@ typedef struct STATES{
     short int decimal_two;
     short int read_ADC_flag;
     short int filter_flag;
-    short int timer_flag;
+    short int tx_flag;
 }STATES;
 typedef struct COUNTERS{
     long int high_counter;

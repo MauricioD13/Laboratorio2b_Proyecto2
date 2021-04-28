@@ -81,7 +81,6 @@ int aux;
 short int aux1;
 short int aux2;
 int spi_result;
-coef_iir_2_ord ir;
 
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
@@ -108,6 +107,12 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 
     PIR3bits.U1RXIF = 0;
 }
+void __interrupt(irq(IRQ_U1TX),base(0x0008)) U1TX_isr(){
+    
+    U1CON0bits.TXEN = 0;
+    
+    PIR3bits.U1TXIF = 0;
+}
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
     
@@ -126,7 +131,7 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
         
         SPI1TXB = MSB_spi;
         cont = 0;
-        
+        //SPI1CON0bits.EN = 0;
     }
     
     
@@ -140,6 +145,10 @@ void init_PIC(void){
     config_ADC();
     config_UART();
     config_SPI();
+    states.filter_flag = 0; 
+    states.tx_flag = 0;
+    states.read_ADC_flag = 0;
+    
 }
 
 int main(void) {
@@ -164,71 +173,66 @@ int main(void) {
     
     //MAIN LOOP
     while(1){
-        
-        if(states.read_ADC_flag == 1){
+        if(counters.high_counter >= 21){
+            PORTDbits.RD1 = 1;
+            START_CONVERSION = 1;
+            counters.high_counter = 0;
+            PORTDbits.RD1 = 0;
             
+        }
+        
             
             //convert_number(&states);
             
-            if(TX_FLAG == 1){
+        if(states.tx_flag == 1){
                 
-                int tx;
-                counters.cont_tx++;
-                
-                if(counters.cont_tx == 1){
-                    
-                    tx = (short int)states.filtered_number_FIR>>8;
-                    TO_TRANSMIT = (short int)tx;
-                    
-                }
-                else if (counters.cont_tx == 2){
-                    
-                    TO_TRANSMIT = (short int)states.filtered_number_FIR;
-                }
-                else if(counters.cont_tx == 3){
-                    TO_TRANSMIT = 10;
-                    
-                    counters.cont_tx = 0;
-                }
-                
-                TX_FLAG = 0;
-                
-            }
-          
-            if(states.filter_flag == 1){
-                PORTDbits.RD0 = 1;
-                states.filtered_number_FIR = filter_FIR(states.ADC_number);
-                PORTDbits.RD0 = 0;
-                states.filter_flag = 0;
-                aux = states.filtered_number_FIR + 4096;
-                LSB_spi = (char)aux; 
-                aux = aux>>8;
-                MSB_spi = (char)aux;
+            int tx;
+            counters.cont_tx++;
             
-                
+            if(counters.cont_tx == 1){
+                tx = states.ADC_number>>8;
+                TO_TRANSMIT = (char)tx;
             }
-           
-        }
-        
-        if(counters.high_counter >= 21){
-                PORTDbits.RD1 = 1;
-                START_CONVERSION = 1;
-                counters.high_counter = 0;
-                PORTDbits.RD1 = 0;
-        }
-        
-        if(counters.cont_rx == 1){
-            received = rx;
-            }
-            else if(counters.cont_rx == 2){
-                rx = (rx<<8);
-                received = (received) |(rx);
-                counters.count_to = (25*received) - (received-1);
+            else if(counters.cont_tx == 2){
+                TO_TRANSMIT = (char)states.ADC_number;
                 
-                counters.counter = 0;
-                counters.cont_rx = 0;
-                rx = 0;
+                
+            }   
+            else if(counters.cont_tx == 3){
+                tx = (char)states.filtered_number_FIR>>8;
+                TO_TRANSMIT = (char)tx;
+
+            }
+            else if (counters.cont_tx == 4){
+                TO_TRANSMIT = (char)states.filtered_number_FIR;
+                    
+                }
+            else if(counters.cont_tx == 5){
+                TO_TRANSMIT = 10;
+                states.tx_flag = 0;
+                counters.cont_tx = 0;
+                states.filter_flag = 0;
+            }
+                    
         }
+                
+        
+          
+        if(states.filter_flag == 1){
+            PORTDbits.RD0 = 1;
+            states.filtered_number_FIR = filter_FIR(states.ADC_number);
+            PORTDbits.RD0 = 0;
+            states.tx_flag = 1;
+            states.filter_flag = 0;
+            aux = states.filtered_number_FIR + 4096;
+            LSB_spi = (char)aux; 
+            aux = aux>>8;
+            MSB_spi = (char)aux;
+            SPI1CON0bits.EN = 1;
+                    
+        }
+            
+            
         
     }
     
